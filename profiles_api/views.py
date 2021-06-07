@@ -8,7 +8,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework import filters
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
-
+from rest_framework.permissions import IsAuthenticatedOrReadOnly #IsAuthenticated->tozih paeen
 
 from profiles_api import serializers
 from profiles_api import models
@@ -28,7 +28,6 @@ class HelloApiView(APIView):
             'Gives you the most control over your application logic',
             'Is mapped manually to URLs',
         ]
-        print(request.user)
         return Response({'message':'hello', 'an_apiview':an_apiview})
     
     def post(self, request):
@@ -71,6 +70,7 @@ class HelloViewSet(viewsets.ViewSet):
             'Automatically maps to URLs using Routers',
             'provides more functionality with less code',
         ]
+        print(request.user)
 
         return Response({'message':'hello', 'a_viewset':a_viewset})
     
@@ -121,3 +121,18 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 class UserLoginApiView(ObtainAuthToken):
     """Handle Creating user authentication tokens"""
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
+
+class UserProfileFeedViewSet(viewsets.ModelViewSet):
+    """Handle Creating, reading and Updating profiles feed items"""
+    Authentication_classes = (TokenAuthentication,)
+    serializer_class = serializers.ProfileFeedItemSerializer
+    queryset = models.ProfileFeedItem.objects.all()
+    permission_classes = (
+        permissions.UpdateOwnStatus,
+        IsAuthenticatedOrReadOnly #IsAuthenticated(OrReadonly hazf mishe) ro vaghti migim ke 
+        #faghat mikhaim userhaye sabt shode item or bebinand ya create konand
+    )
+    def perform_create(self, serializer):
+        """sets the user profile to the logged in user"""
+        serializer.save(user_profile=self.request.user)
